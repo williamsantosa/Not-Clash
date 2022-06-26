@@ -40,16 +40,18 @@ def teamSort(players, n):
 
     # Initialize dictionary containing all teams and players
     teams = {i:[] for i in range(n)} # team number : list of players in team
-
-    # Sort until no leftover players
-    curr = 0 # current team
+    
+    # Sort until everything is full
+    currTeam = 0
     while len(p_copy) > 0:
         # Put player into team and remove from list of players
         index = random.randint(0, len(p_copy) - 1)
-        teams[curr].append(p_copy.pop(index))
+        teams[currTeam].append(p_copy.pop(index))
 
-        # Increment, reset if needed
-        curr = curr + 1 if curr < n else 0
+        # Increment and reset if needed
+        currTeam = currTeam + 1
+        if currTeam >= n:
+            currTeam = 0
         
     return teams
 
