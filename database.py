@@ -16,8 +16,8 @@ def generateDatabase():
   cursor.execute("CREATE TABLE Data (discordid BIGINT, elo INT, wins INT, games INT, primaryrole INT, secondaryrole INT)")
   return connection
 
-# Insert new player into Database
-def insert(connection, discordid):
+# Register new player into Database
+def register(connection, discordid):
   cursor = connection.cursor()
   cursor.execute("INSERT INTO Data VALUES ({}, 1000, 0, 0, 0, 0)".format(discordid))
   connection.commit()
@@ -26,7 +26,8 @@ def insert(connection, discordid):
 def modify(connection, discordid, type, value):
   cursor = connection.cursor()
   cursor.execute("UPDATE Data SET {} = {} WHERE discordid = {}".format(type, value, discordid))
-
+  connection.commit()
+  
 # Read elo from Data
 def elo(connection, discordid):
   cursor = connection.cursor()

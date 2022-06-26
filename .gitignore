@@ -1,3 +1,6 @@
 __pycache__
 test.py
 *.db*
+config.py
+*.pkl
+TDLIST.md
