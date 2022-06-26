@@ -56,3 +56,9 @@ def secondaryrole(connection, discordid):
   cursor = connection.cursor()
   data = cursor.execute("SELECT secondaryrole FROM Data WHERE discordid = {}".format(discordid)).fetchall()
   return data[0][0]
+
+# Check if existing entry in Data
+def exists(connection, discordid):
+  cursor = connection.cursor()
+  found = cursor.execute("SELECT EXISTS(SELECT * FROM Data WHERE discordid = {});".format(discordid)).fetchall()
+  return found[0][0] == 1
