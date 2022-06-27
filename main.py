@@ -10,12 +10,15 @@ from probability import *
 TOKEN = cfg.TOKEN
 client = discord.Client()
 
+# Formatted message
+async def fsend(message, colour, content):
+    msg = discord.Embed(colour = colour)
+    msg.add_field(value=content, inline=False)
+    await message.channel.send(embed=msg)
+
 # Help message
 async def usage(message):
-    msg = discord.Embed(
-        colour = discord.Color.orange()
-    )
-
+    msg = discord.Embed(colour = discord.Color.blue())
     msg.add_field(name="League", value="!league <@player1> <@player2> ...\n!finish <team number>\n!cancel\n!register [@player]\n!stats [@player]", inline=False)
     msg.add_field(name="Legacy", value="!lteam <number of teams> <player1> <player2> ...\n!lleague <player1> <player2> ...", inline=False)
     await message.channel.send(embed=msg)
@@ -69,7 +72,7 @@ async def registerPlayer(message, conn, id):
         print("Found discordid...")
         return
     register(conn, id)
-    await message.channel.send(f"<@{id}> succesfully registered!")
+    await fsend(message, discord.Colour.red(), f"<@{id}> succesfully registered!")
 
 # Print client to terminal
 @client.event
@@ -98,17 +101,14 @@ async def on_message(message):
     # Help command and create variable for message put lowercase
     if listmsg[0] == "!help":
         await usage(message)
-        return
     
     # Any number of teams and players
     elif listmsg[0] == "!lteam":
         await legacyTeam(listmsg, message)
-        return
 
     # Specifically for League of Legends 5v5, returns the player and the role within each team
     elif listmsg[0] == "!lleague":
         await legacyLeague(listmsg, message)
-        return
 
     # League of Legends Ordering
     elif listmsg[0] == "!league":
@@ -118,7 +118,7 @@ async def on_message(message):
 
         # Error message
         if(len(ids) != 10):
-            await message.channel.send(f"Please ping 10 players. You inputted {len(ids)} players.")
+            await fsend(message, discord.Colour.red(), f"Please ping 10 players. You inputted {len(ids)} players.")
             return
         
         # Check if ID exists in Data.db, register if not
@@ -145,15 +145,12 @@ async def on_message(message):
         msg.add_field(name="Team 2", value=str2, inline=False)
 
         await message.channel.send(embed=msg)
-        return
 
     # Finish match and update teams
     elif listmsg[0] == "!finish":
         # Load Match Data
         with open("match.pkl", "rb") as f:
             mData = pickle.load(f)
-
-        print(mData)
         
         # Calculate new team Elo
         r1, r2 = 0, 0
@@ -171,17 +168,16 @@ async def on_message(message):
         for id in mData[0]:
             modify(conn, id, "elo", elo(conn, id) + diff1)
             modify(conn, id, "games", games(conn, id) + 1)
-            if winTeam == 0:
+            if winTeam == 1:
                 modify(conn, id, "wins", wins(conn, id) + 1) 
         for id in mData[1]:
             modify(conn, id, "elo", elo(conn, id) + diff2)
             modify(conn, id, "games", games(conn, id) + 1)
-            if winTeam == 1:
+            if winTeam == 2:
                 modify(conn, id, "wins", wins(conn, id) + 1)
         
-        await message.channel.send(f"Succesfully updated teams. Team {winTeam} won!")
+        await fsend(message, discord.Colour.blue(), f"Succesfully updated teams. Team {winTeam} won!")
         os.remove("match.pkl")
-        return
 
     # Register new player
     elif listmsg[0] == "!register":
@@ -191,7 +187,6 @@ async def on_message(message):
             val = listmsg[1]
             id = int(val[val.index("<@")+2:val.index(">")])
         await registerPlayer(message, conn, id)
-        return
 
     # Statistics for the player
     elif listmsg[0] == "!stats":
@@ -202,7 +197,7 @@ async def on_message(message):
             id = val[val.index("<@")+2:val.index(">")]
 
         if not exists(conn, id):
-            await message.channel.send(f"<@{id}> is not registered.")
+            await fsend(message, discord.Colour.red(), f"<@{id}> is not registered.")
             return
 
         roles = {
@@ -224,13 +219,48 @@ async def on_message(message):
         msg.add_field(name="Secondary Role", value=roles[secondaryrole(conn,id)],inline=False)
 
         await message.channel.send(embed=msg)
-        return
 
     # Cancels a game
     elif listmsg[0] == "!cancel":
+        # Check if ongoing match
+        if not os.path.exists("match.pkl"):
+            await fsend(message, discord.Colour.red(), "No ongoing match.")
+            return
+
+        # Remove match
         os.remove("match.pkl")
-        await message.channel.send("Sucessfully cancelled game.")
+
+        await fsend(message, discord.Colour.blue(), "Match cancelled.")
+    
+    # Swap two players' roles
+    elif listmsg[0] == "!swap":
+        # Check if ongoing match
+        if not os.path.exists("match.pkl"):
+            await fsend(message, discord.Colour.red(), "No ongoing match.")
+            return
+
+        # Load Match Data
+        with open("match.pkl", "rb") as f:
+            mData = pickle.load(f)
         
+        # Split into individual IDs
+        ids = lmsg.split("<@")[1:]
+        ids = [ids[i][:ids[i].find(">")] for i in range(len(ids))]
+
+        # Check if in Team
+        for team in mData:
+            id1, id2 = ids[0], ids[1]
+            if id1 not in team or id2 not in team:
+                continue
+            team[id1], team[id2] = team[id2], team[id1]
+        
+        # Overwrite team with their new roles
+        os.remove("match.pkl")
+        with open("match.pkl", "wb") as f:
+            pickle.dump(mData, f)
+
+        await fsend(message, discord.Colour.blue(), "Succesfully updated roles!")
+
 # Run client on server/machine
 if __name__ == "__main__":
     client.run(TOKEN)   
