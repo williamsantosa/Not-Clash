@@ -18,8 +18,16 @@ async def fsend(message, colour, content):
 
 # Help message
 async def usage(message):
-    msg = discord.Embed(colour = discord.Color.blue())
-    msg.add_field(name="League", value="!league <@player1> <@player2> ...\n!finish <team number>\n!cancel\n!register [@player]\n!stats [@player]", inline=False)
+    msg = discord.Embed(colour = discord.Color.orange())
+    msg.add_field(name="League", value="!league <@player1> <@player2> ...\n" +
+    "!finish <team number>\n" + 
+    "!cancel\n" + 
+    "!swap <@player1> <@player2>\n" +
+    "!display\n" +
+    "!register [@player]\n" +
+    "!primary <role>\n" +
+    "!secondary <role>\n"
+    "!stats [@player]", inline=False)
     msg.add_field(name="Legacy", value="!lteam <number of teams> <player1> <player2> ...\n!lleague <player1> <player2> ...", inline=False)
     await message.channel.send(embed=msg)
 
