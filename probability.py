@@ -15,9 +15,10 @@ def eloRating(r1, r2, D, K, w):
   w           : 1 or 2, player/team 1 wins or player/team 2 wins
   returnValue : (newr1, newr2)
   '''
+  wp = 0 if w == 1 else 1
   p1, p2 = prob(r1, r2, D), prob(r2, r1, D)
-  rv1 = float(r1) + float(K) * (w - p1)
-  rv2 = float(r2) + float(K) * (w - p2)
+  rv1 = float(r1) + float(K) * (wp - p1)
+  rv2 = float(r2) + float(K) * (wp - p2)
   return (int(rv1), int(rv2))
 
 # Returns the confidence level that a player is in their Elo

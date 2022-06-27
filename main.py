@@ -13,7 +13,7 @@ client = discord.Client()
 # Formatted message
 async def fsend(message, colour, content):
     msg = discord.Embed(colour = colour)
-    msg.add_field(value=content, inline=False)
+    msg.description = content
     await message.channel.send(embed=msg)
 
 # Help message
@@ -72,7 +72,7 @@ async def registerPlayer(message, conn, id):
         print("Found discordid...")
         return
     register(conn, id)
-    await fsend(message, discord.Colour.red(), f"<@{id}> succesfully registered!")
+    await fsend(message, discord.Colour.blue(), f"<@{id}> succesfully registered!")
 
 # Print client to terminal
 @client.event
@@ -99,19 +99,19 @@ async def on_message(message):
     listmsg = lmsg.split(" ")
 
     # Help command and create variable for message put lowercase
-    if listmsg[0] == "!help":
+    if listmsg[0] == cfg.prefix + "help":
         await usage(message)
     
     # Any number of teams and players
-    elif listmsg[0] == "!lteam":
+    elif listmsg[0] == cfg.prefix + "lteam":
         await legacyTeam(listmsg, message)
 
     # Specifically for League of Legends 5v5, returns the player and the role within each team
-    elif listmsg[0] == "!lleague":
+    elif listmsg[0] == cfg.prefix + "lleague":
         await legacyLeague(listmsg, message)
 
     # League of Legends Ordering
-    elif listmsg[0] == "!league":
+    elif listmsg[0] == cfg.prefix + "league":
         # Split into individual IDs
         ids = lmsg.split("<@")[1:]
         ids = [ids[i][:ids[i].find(">")] for i in range(len(ids))]
@@ -130,11 +130,24 @@ async def on_message(message):
         with open("match.pkl", "wb") as f:
             pickle.dump(teams, f)
 
-        str1, str2 = "", ""
-        for player in teams[0]:
-            str1 += f"<@{str(player)}> : {teams[0][player]}\n"
-        for player in teams[1]:
-            str2 += f"<@{str(player)}> : {teams[1][player]}\n"
+        # Generate average Elo of each team
+        r1, r2 = 0.0, 0.0
+        for id in teams[0]:
+            r1 += elo(conn, int(id))
+        for id in teams[1]:
+            r2 += elo(conn, int(id))
+        r1, r2 = r1 / 5.0, r2 / 5.0
+        str1, str2 = f"**Average Elo:** {round(r1)}\n", f"**Average Elo:** {round(r2)}\n"
+
+        # Display team roles
+        t1, t2 = {value:key for key, value in teams[0].items()}, {value:key for key, value in teams[1].items()}
+        ts1, ts2 = sorted(t1), sorted(t2)
+        ts1[0], ts1[3], ts1[4] = "Top", "Bot", "Support"
+        ts2[0], ts2[3], ts2[4] = "Top", "Bot", "Support"
+        for role in ts1:
+            str1 += f"{role} : <@{t1[role]}>\n"
+        for role in ts2:
+            str2 += f"{role} : <@{t2[role]}>\n"
 
         # Send message in Discord
         msg = discord.Embed(
@@ -147,13 +160,13 @@ async def on_message(message):
         await message.channel.send(embed=msg)
 
     # Finish match and update teams
-    elif listmsg[0] == "!finish":
+    elif listmsg[0] == cfg.prefix + "finish":
         # Load Match Data
         with open("match.pkl", "rb") as f:
             mData = pickle.load(f)
         
         # Calculate new team Elo
-        r1, r2 = 0, 0
+        r1, r2 = 0.0, 0.0
         winTeam = int(listmsg[1])
         for id in mData[0]:
             r1 += elo(conn, int(id))
@@ -161,12 +174,12 @@ async def on_message(message):
             r2 += elo(conn, int(id))
         r1, r2 = r1 / 5.0, r2 / 5.0
 
-        newTeamElo = eloRating(r1, r2, 600, 100, winTeam)
+        newTeamElo = eloRating(r1, r2, 400, 50, winTeam)
 
         diff1, diff2 = newTeamElo[0] - r1, newTeamElo[1] - r2
 
         for id in mData[0]:
-            modify(conn, id, "elo", elo(conn, id) + diff1)
+            modify(conn, id, "elo", elo(conn, id) - diff1)
             modify(conn, id, "games", games(conn, id) + 1)
             if winTeam == 1:
                 modify(conn, id, "wins", wins(conn, id) + 1) 
@@ -180,7 +193,7 @@ async def on_message(message):
         os.remove("match.pkl")
 
     # Register new player
-    elif listmsg[0] == "!register":
+    elif listmsg[0] == cfg.prefix + "register":
         if len(listmsg) == 1:
             id = message.author.id
         else:
@@ -189,7 +202,7 @@ async def on_message(message):
         await registerPlayer(message, conn, id)
 
     # Statistics for the player
-    elif listmsg[0] == "!stats":
+    elif listmsg[0] == cfg.prefix + "stats":
         if len(listmsg) == 1:
             id = message.author.id
         else:
@@ -212,7 +225,7 @@ async def on_message(message):
         msg = discord.Embed(colour = discord.Color.orange())
         
         msg.add_field(name="Player", value=f"<@{id}>", inline=False)
-        msg.add_field(name="Elo", value=str(elo(conn,id)), inline=False)
+        msg.add_field(name="Elo", value=str(round(elo(conn,id))), inline=False)
         msg.add_field(name="Wins", value=str(wins(conn,id)), inline=False)
         msg.add_field(name="Games", value=str(games(conn,id)), inline=False)
         msg.add_field(name="Primary Role", value=roles[primaryrole(conn,id)],inline=False)
@@ -221,7 +234,7 @@ async def on_message(message):
         await message.channel.send(embed=msg)
 
     # Cancels a game
-    elif listmsg[0] == "!cancel":
+    elif listmsg[0] == cfg.prefix + "cancel":
         # Check if ongoing match
         if not os.path.exists("match.pkl"):
             await fsend(message, discord.Colour.red(), "No ongoing match.")
@@ -233,7 +246,7 @@ async def on_message(message):
         await fsend(message, discord.Colour.blue(), "Match cancelled.")
     
     # Swap two players' roles
-    elif listmsg[0] == "!swap":
+    elif listmsg[0] == cfg.prefix + "swap":
         # Check if ongoing match
         if not os.path.exists("match.pkl"):
             await fsend(message, discord.Colour.red(), "No ongoing match.")
@@ -248,11 +261,17 @@ async def on_message(message):
         ids = [ids[i][:ids[i].find(">")] for i in range(len(ids))]
 
         # Check if in Team
+        found = False
         for team in mData:
             id1, id2 = ids[0], ids[1]
             if id1 not in team or id2 not in team:
                 continue
             team[id1], team[id2] = team[id2], team[id1]
+            found = True
+        
+        if not found:
+            await fsend(message, discord.Colour.red(), "Players are not on the same team.")
+            return
         
         # Overwrite team with their new roles
         os.remove("match.pkl")
@@ -260,6 +279,94 @@ async def on_message(message):
             pickle.dump(mData, f)
 
         await fsend(message, discord.Colour.blue(), "Succesfully updated roles!")
+    
+    # Display current match
+    elif listmsg[0] == cfg.prefix + "display":
+        # Check if ongoing match
+        if not os.path.exists("match.pkl"):
+            await fsend(message, discord.Colour.red(), "No ongoing match.")
+            return
+
+        # Load Match Data
+        with open("match.pkl", "rb") as f:
+            teams = pickle.load(f)
+
+        # Generate average Elo of each team
+        r1, r2 = 0.0, 0.0
+        for id in teams[0]:
+            r1 += elo(conn, int(id))
+        for id in teams[1]:
+            r2 += elo(conn, int(id))
+        r1, r2 = r1 / 5.0, r2 / 5.0
+        str1, str2 = f"**Average Elo:** {round(r1)}\n", f"**Average Elo:** {round(r2)}\n"
+
+        # Display team roles
+        t1, t2 = {value:key for key, value in teams[0].items()}, {value:key for key, value in teams[1].items()}
+        ts1, ts2 = sorted(t1), sorted(t2)
+        ts1[0], ts1[3], ts1[4] = "Top", "Bot", "Support"
+        ts2[0], ts2[3], ts2[4] = "Top", "Bot", "Support"
+        for role in ts1:
+            str1 += f"{role} : <@{t1[role]}>\n"
+        for role in ts2:
+            str2 += f"{role} : <@{t2[role]}>\n"
+
+        # Send message in Discord
+        msg = discord.Embed(
+            colour = discord.Color.orange()
+        )
+
+        msg.add_field(name="Team 1", value=str1, inline=False)
+        msg.add_field(name="Team 2", value=str2, inline=False)
+
+        await message.channel.send(embed=msg)
+
+    # Choose primary role
+    elif listmsg[0] == cfg.prefix + "primary":
+        id = message.author.id
+        if not exists(conn, id):
+            await fsend(message, discord.Colour.red(), f"<@{id}> is not registered.")
+            return
+
+        val = listmsg[1].lower()
+        roles = {
+            "fill" : 0,
+            "top" : 1,
+            "jungle" : 2,
+            "mid" : 3,
+            "bot" : 4, 
+            "support" : 5
+        }
+
+        if val not in roles:
+            await fsend(message, discord.Colour.red(), f"{val} is an invalid selection. Please choose from the following:\n- Fill\n- Top\n- Jungle\n- Mid\n- Bot\n- Support")
+            return
+
+        modify(conn, id, "primaryrole", roles[val])
+        await fsend(message, discord.Colour.blue(), f"Succesfully updated primary role to {val}!")
+
+    # Choose secondary role
+    elif listmsg[0] == cfg.prefix + "secondary":
+        id = message.author.id
+        if not exists(conn, id):
+            await fsend(message, discord.Colour.red(), f"<@{id}> is not registered.")
+            return
+
+        val = listmsg[1].lower()
+        roles = {
+            "fill" : 0,
+            "top" : 1,
+            "jungle" : 2,
+            "mid" : 3,
+            "bot" : 4, 
+            "support" : 5
+        }
+
+        if val not in roles:
+            await fsend(message, discord.Colour.red(), f"{val} is an invalid selection. Please choose from the following:\n- Fill\n- Top\n- Jungle\n- Mid\n- Bot\n- Support")
+            return
+
+        modify(conn, id, "secondaryrole", roles[val])
+        await fsend(message, discord.Colour.blue(), f"Succesfully updated secondary role to {val}!")
 
 # Run client on server/machine
 if __name__ == "__main__":
