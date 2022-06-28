@@ -6,7 +6,7 @@ Not Clash is a tool based off the original League of Legends event called "Clash
 
 1. Install [Python3](https://www.python.org/downloads/) v3.5.3+.
 2. Install [discord.py](https://pypi.org/project/discord.py/).
-3. Set up [Discord Bot](https://discordpy.readthedocs.io/en/stable/discord.html) and insert credentials.
+3. Set up [Discord Bot](https://discordpy.readthedocs.io/en/stable/discord.html) and insert credentials into `configtemplate.py`.
 4. Install pickle if Python3 is less than v3.8.
 5. Rename `configtemplate.py` to `config.py` and change variables.
 
