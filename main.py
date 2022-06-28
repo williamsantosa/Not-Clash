@@ -1,4 +1,3 @@
-from hashlib import new
 import discord
 import config as cfg
 import sqlite3
@@ -19,7 +18,7 @@ async def fsend(message, colour, content):
 # Help message
 async def usage(message):
     msg = discord.Embed(colour = discord.Color.orange())
-    msg.add_field(name="League", value="!league <@player1> <@player2> ...\n" +
+    msg.add_field(name="League", value="!league <@player1> <@player2> ... <@player10>\n" +
     "!finish <team number>\n" + 
     "!cancel\n" + 
     "!swap <@player1> <@player2>\n" +
@@ -182,7 +181,7 @@ async def on_message(message):
             r2 += elo(conn, int(id))
         r1, r2 = r1 / 5.0, r2 / 5.0
 
-        newTeamElo = eloRating(r1, r2, 400, 50, winTeam)
+        newTeamElo = eloRating(r1, r2, cfg.D, cfg.K, winTeam)
 
         diff1, diff2 = newTeamElo[0] - r1, newTeamElo[1] - r2
 
