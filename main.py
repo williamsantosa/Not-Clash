@@ -25,8 +25,9 @@ async def usage(message):
     "!display\n" +
     "!register [@player]\n" +
     "!primary <role>\n" +
-    "!secondary <role>\n"
-    "!stats [@player]", inline=False)
+    "!secondary <role>\n" + 
+    "!stats [@player]" + 
+    "!leaderboard [n/all]", inline=False)
     msg.add_field(name="Legacy", value="!lteam <number of teams> <player1> <player2> ...\n!lleague <player1> <player2> ...", inline=False)
     await message.channel.send(embed=msg)
 
@@ -233,6 +234,15 @@ async def on_message(message):
         
         msg.add_field(name="Player", value=f"<@{id}>", inline=False)
         msg.add_field(name="Elo", value=str(round(elo(conn,id))), inline=False)
+        sortedList = []
+        ids = column(conn, "discordid")
+        for id_temp in ids:
+            sortedList.append((elo(conn, id_temp), id_temp))
+        sortedList.sort(reverse=True)
+        for i, pair in enumerate(sortedList):
+            if int(pair[1]) == int(id):
+                msg.add_field(name="Rank", value=f"{i+1}", inline=False)
+                break
         msg.add_field(name="Wins", value=str(wins(conn,id)), inline=False)
         msg.add_field(name="Games", value=str(games(conn,id)), inline=False)
         msg.add_field(name="Primary Role", value=roles[primaryrole(conn,id)],inline=False)
@@ -374,6 +384,28 @@ async def on_message(message):
 
         modify(conn, id, "secondaryrole", roles[val])
         await fsend(message, discord.Colour.blue(), f"Succesfully updated secondary role to {val}!")
+
+    # Display leaderboard
+    elif listmsg[0] == cfg.prefix + "leaderboard":
+        if len(listmsg) == 1:
+            n = 10
+        elif len(listmsg) == 2 and listmsg[1].lower() == "all":
+            n = 999999
+        else:
+            n = int(listmsg[1])
+        ids = column(conn, "discordid")
+
+        sortedList = []
+        for id in ids:
+            sortedList.append((elo(conn, id), id))
+        sortedList.sort(reverse=True)
+
+        msg = discord.Embed(colour = discord.Color.orange())
+        for i, pair in enumerate(sortedList):
+            if i >= n: break
+            msg.add_field(name=f"Rank {i+1}", value=f"<@{pair[1]}>: {round(pair[0])}", inline=False)
+
+        await message.channel.send(embed=msg)
 
 # Run client on server/machine
 if __name__ == "__main__":
