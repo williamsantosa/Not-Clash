@@ -53,6 +53,9 @@ Commands for Not Clash tournaments.
 `stats [@player]`
 > Displays the player's statistics or the pinged player's statistics if provided.
 
+`leaderboard [top n/all]`
+> Displays the top n players or if called with all, displays all players.
+
 **Legacy**
 
 Legacy commands from the Clash Helper that was the predecessor for the Not Clash bot.

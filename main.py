@@ -26,8 +26,8 @@ async def usage(message):
     "!register [@player]\n" +
     "!primary <role>\n" +
     "!secondary <role>\n" + 
-    "!stats [@player]" + 
-    "!leaderboard [n/all]", inline=False)
+    "!stats [@player]\n" + 
+    "!leaderboard [top n/all]", inline=False)
     msg.add_field(name="Legacy", value="!lteam <number of teams> <player1> <player2> ...\n!lleague <player1> <player2> ...", inline=False)
     await message.channel.send(embed=msg)
 
