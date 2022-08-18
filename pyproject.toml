@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "Not Clash"
+version = "0.1.0"
+description = "Discord bot for facilitating League of Legends 5v5 custom matches with matchmaking rating and team creation."
+authors = ["Will <williamwsantosa@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+discord = "^1.7.3"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
