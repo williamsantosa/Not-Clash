@@ -65,3 +65,18 @@ Legacy commands from the Clash Helper that was the predecessor for the Not Clash
 
 `lleague <player1> <player2> ... <player10>`
 > Creates 2 teams and equally distributes players among the teams with their roles.
+
+## Examples
+
+
+![League Command](Media/league.png)
+
+![Swap Command](Media/swap.png)
+
+![Display & Finish Command](Media/display.png)
+
+![Leaderboard Command](Media/display.png)
+
+![Stats Command 1](Media/stats1.png)
+
+![Stats Command 2](Media/stats2.png)
